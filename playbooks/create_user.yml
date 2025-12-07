@@ -1,0 +1,34 @@
+---
+- name: "Create a DevSecOps User"
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars_files:
+       - ../vars/user.yaml
+
+  tasks:
+    - name: "Ensure Group Exists"
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ user_groups | default([]) }}"
+
+    - name: "Create User Account"
+      ansible:builtin.user:
+        name: "{{ user_name }}"
+        comment: "{{ user_comment }}"
+        shell: "{{ user_shell }}"
+        groups: "{{ user_groups | join(',') }}"
+        create_home: "{{ user_create_home }}"
+        state: present
+
+    - name: "Authorize SSH Key"
+      ansible.builtin.authorized_key:
+        user: "{{ user_name }}"
+        key: "{{ user_ssh_public_key }}"
+        state: present
+        manage_dir: true
+      when: user_ssh_public_key is defined
+
+
