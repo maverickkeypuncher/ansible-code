@@ -1,0 +1,30 @@
+name: Test Ansible Workflow (Self Hosted)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    runs-on: runs-on: [self-hosted, Linux, X64]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Ansible + lint
+        run: |
+          sudo dnf install -y python3-pip
+          pip3 install --upgrade pip
+          pip3 install ansible ansible-lint
+      - name: Lint playbook
+        run: ansible-lint playbooks/create_user.yml
+
+  ansible-run:
+    runs-on: runs-on: [self-hosted, Linux, X64]
+    needs: [lint]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Ansible
+        run: sudo dnf install -y ansible
+      - name: Run playbook on remote Red Hat host
+        run: |
+          ansible-playbook -i inventory.ini playbooks/create_user.yml \
+            --vault-password-file ~/.ansible/vault.pass
